@@ -1,0 +1,322 @@
+package com.sddevops.jenkins_maven.eclipse;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.List;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.mockito.Mockito.*;
+
+class SongCollectionTest {
+
+	private SongCollection sc;
+	private Song s1;
+	private Song s2;
+	private Song s3;
+	private Song s4;
+	private static final int SONG_COLLECTION_SIZE = 4;
+	private SongCollection scWithSize1;
+
+	/**
+	 * @throws java.lang.Exception
+	 */
+	@BeforeEach
+	void setUp() {
+		sc = new SongCollection();
+		s1 = new Song("001", "good 4 u", "Olivia Rodrigo", 3.59);
+		s2 = new Song("002", "Peaches", "Justin Bieber", 3.18);
+		s3 = new Song("003", "MONTERO", "Lil Nas", 2.3);
+		s4 = new Song("004", "bad guy", "billie eilish", 3.14);
+		sc.addSong(s1);
+		sc.addSong(s2);
+		sc.addSong(s3);
+		sc.addSong(s4);
+		new SongCollection(5);
+		scWithSize1 = new SongCollection(1);
+
+	}
+
+	/**
+	 * @throws java.lang.Exception
+	 */
+	@AfterEach
+	void tearDown() {
+		sc = null;
+		scWithSize1 = null;
+
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.sddevops.junit_maven.eclipse.SongCollection#getSongs()}.
+	 */
+	@Test
+	void testGetSongs() {
+		List<Song> testSc = sc.getSongs();
+		assertEquals(SONG_COLLECTION_SIZE, testSc.size());
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.sddevops.junit_maven.eclipse.SongCollection#addSong(com.sddevops.junit_maven.eclipse.Song)}.
+	 */
+	@Test
+	void testAddSong() {
+		List<Song> testSc = sc.getSongs();
+		// Assert that Song Collection is equals to Song Collection Size : 4
+		assertEquals(SONG_COLLECTION_SIZE, testSc.size());
+		// Act
+		sc.addSong(s1);
+		// Assert that Song Collection is equals to Song Collection Size + 1 : 5
+		assertEquals(testSc.size(), SONG_COLLECTION_SIZE + 1);
+
+		scWithSize1.addSong(s1);
+		scWithSize1.addSong(s2);
+		scWithSize1.addSong(s3);
+		assertEquals(1, scWithSize1.getSongs().size());
+
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.sddevops.junit_maven.eclipse.SongCollection#sortSongsByTitle()}.
+	 */
+	@Test
+	void testSortSongsByTitle() {
+		List<Song> sortedSongList = sc.sortSongsByTitle();
+		assertEquals("MONTERO", sortedSongList.get(0).getTitle());
+		assertEquals("Peaches", sortedSongList.get(1).getTitle());
+		assertEquals("bad guy", sortedSongList.get(2).getTitle());
+		assertEquals("good 4 u", sortedSongList.get(3).getTitle());
+
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.sddevops.junit_maven.eclipse.SongCollection#sortSongsBySongLength()}.
+	 */
+	@Test
+	void testSortSongsBySongLength() {
+		List<Song> sortedSongByLengthList = sc.sortSongsBySongLength();
+		assertEquals(3.59, sortedSongByLengthList.get(0).getSongLength());
+		assertEquals(3.18, sortedSongByLengthList.get(1).getSongLength());
+		assertEquals(3.14, sortedSongByLengthList.get(2).getSongLength());
+		assertEquals(2.3, sortedSongByLengthList.get(3).getSongLength());
+
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.sddevops.junit_maven.eclipse.SongCollection#findSongsById(java.lang.String)}.
+	 */
+	@Test
+	void testFindSongsById() {
+		Song song = sc.findSongsById("004");
+		assertEquals("billie eilish", song.getArtiste());
+		assertNull(sc.findSongsById("doesnt exist"));
+
+	}
+
+	/**
+	 * Test method for
+	 * {@link com.sddevops.junit_maven.eclipse.SongCollection#findSongByTitle(java.lang.String)}.
+	 */
+	@Test
+	void testFindSongByTitle() {
+		Song song = sc.findSongByTitle("MONTERO");
+		assertEquals("Lil Nas", song.getArtiste());
+		assertNull(sc.findSongByTitle("doesnt exist"));
+
+	}
+
+	@Test
+	void testFetchSongOfTheDay() {
+		// Rewritten version (Java 8–14 compatible)
+		String mockJson = "{\n" +
+			    "    \"id\": \"001\",\n" +
+			    "    \"title\": \"Mock Song\",\n" +
+			    "    \"artiste\": \"Mock Artist\",\n" +
+			    "    \"songLength\": 4.25\n" +
+			    "}";
+		
+		SongCollection collection = spy(new SongCollection());
+		doReturn(mockJson).when(collection).fetchSongJson();
+
+		Song result = collection.fetchSongOfTheDay();
+
+		assertNotNull(result);
+
+		assertEquals("001", result.getId());
+		assertEquals("Mock Song", result.getTitle());
+		assertEquals("Mock Artist", result.getArtiste());
+		assertEquals(4.25, result.getSongLength());
+	}
+
+	@Test
+	void testInvalidFetchSongOfTheDay() {
+		SongCollection collection = spy(new SongCollection());
+		doReturn(null).when(collection).fetchSongJson();
+
+		Song result = collection.fetchSongOfTheDay();
+
+		assertNull(result);
+	}
+
+	@Test
+	void testExceptionHandlingInFetchSongOfTheDay() {
+		SongCollection collection = spy(new SongCollection());
+		doThrow(new RuntimeException("API failed")).when(collection).fetchSongJson();
+
+		Song result = collection.fetchSongOfTheDay();
+
+		assertNull(result);
+		assertEquals(0, collection.getSongs().size());
+	}
+
+	@Test
+	void testFetchSongOfTheDayTaylorSwift() {
+		// This test ensures that when the artiste is "Taylor Swift," the artiste name
+		// is changed to "TS" and that the song is added to the collection.
+		// Mock the response for Taylor Swift's song
+
+		// Rewritten version (Java 8–14 compatible)
+		String mockJson = "{\n" +
+			    "    \"id\": \"005\",\n" +
+			    "    \"title\": \"Love Story\",\n" +
+			    "    \"artiste\": \"Taylor Swift\",\n" +
+			    "    \"songLength\": 3.55\n" +
+			    "}";
+		
+		SongCollection collection = spy(new SongCollection());
+		doReturn(mockJson).when(collection).fetchSongJson();
+
+		Song result = collection.fetchSongOfTheDay();
+
+		// Assert the song details
+		assertNotNull(result);
+		assertEquals("005", result.getId());
+		assertEquals("Love Story", result.getTitle());
+		assertEquals("TS", result.getArtiste()); // Artiste should be changed to "TS"
+		assertEquals(3.55, result.getSongLength());
+
+		// Assert that the song was added to the collection
+		assertEquals(1, collection.getSongs().size()); // Only 1 song in the collection
+	}
+
+	@Test
+	void testFetchSongOfTheDayBrunoMars() {
+		// This test ensures that when the artiste is "Bruno Mars," the artiste name is
+		// not modified and the song is added to the collection.
+		// Mock the response for Bruno Mars' song
+
+		// Rewritten version (Java 8–14 compatible)
+		String mockJson = "{\n" +
+			    "    \"id\": \"006\",\n" +
+			    "    \"title\": \"Just the Way You Are\",\n" +
+			    "    \"artiste\": \"Bruno Mars\",\n" +
+			    "    \"songLength\": 3.45\n" +
+			    "}";
+		
+		SongCollection collection = spy(new SongCollection());
+		doReturn(mockJson).when(collection).fetchSongJson();
+
+		Song result = collection.fetchSongOfTheDay();
+
+		// Assert the song details
+		assertNotNull(result);
+		assertEquals("006", result.getId());
+		assertEquals("Just the Way You Are", result.getTitle());
+		assertEquals("Bruno Mars", result.getArtiste()); // Artiste should remain "Bruno Mars"
+		assertEquals(3.45, result.getSongLength());
+
+		// Assert that the song was added to the collection
+		assertEquals(1, collection.getSongs().size()); // Only 1 song in the collection
+	}
+
+	@Test
+	void testFetchSongOfTheDayNonMatchingArtist() {
+		// This test ensures that songs from other artists (neither "Taylor Swift" nor
+		// "Bruno Mars") are not added to the collection.
+		// Mock the response for a song by a non-specific artiste
+
+		// Rewritten version (Java 8–14 compatible)
+		String mockJson = "{\n" +
+			    "    \"id\": \"007\",\n" +
+			    "    \"title\": \"Blinding Lights\",\n" +
+			    "    \"artiste\": \"The Weeknd\",\n" +
+			    "    \"songLength\": 3.20\n" +
+			    "}";
+		
+		SongCollection collection = spy(new SongCollection());
+		doReturn(mockJson).when(collection).fetchSongJson();
+
+		Song result = collection.fetchSongOfTheDay();
+
+		// Assert the song details
+		assertNotNull(result);
+		assertEquals("007", result.getId());
+		assertEquals("Blinding Lights", result.getTitle());
+		assertEquals("The Weeknd", result.getArtiste()); // Artiste remains unchanged
+		assertEquals(3.20, result.getSongLength());
+
+		// Assert that the song was NOT added to the collection
+		assertEquals(0, collection.getSongs().size()); // Collection should still be empty
+	}
+
+	@Test
+	void testFetchSongOfTheDayMalformedJson() {
+		// This test ensures that if the API returns invalid or malformed JSON, it does
+		// not crash and gracefully handles the error.
+		// Mock malformed JSON
+
+		// Rewritten version (Java 8–14 compatible)
+		String mockJson = "{\n" +
+			    "    \"id\": \"008\",\n" +
+			    "    \"title\": \"Unknown Song\",\n" +
+			    "    \"artiste\": \"Unknown Artist\"\n" +
+			    "}"; // Missing "songLength"
+		
+		SongCollection collection = spy(new SongCollection());
+		doReturn(mockJson).when(collection).fetchSongJson();
+
+		Song result = collection.fetchSongOfTheDay();
+
+		// Assert that no song is created due to invalid JSON
+		assertNull(result);
+		assertEquals(0, collection.getSongs().size()); // Collection should still be empty
+	}
+
+	@Test
+	void testFetchSongOfTheDayCollectionCapacity() {
+		// This test ensures that the collection does not exceed its specified capacity
+		// when a new song is added.
+		// Mock the response for a valid song
+
+		// Rewritten version (Java 8–14 compatible)
+		String mockJson = "{\n" +
+			    "    \"id\": \"009\",\n" +
+			    "    \"title\": \"New Song\",\n" +
+			    "    \"artiste\": \"New Artist\",\n" +
+			    "    \"songLength\": 3.50\n" +
+			    "}";
+		
+		SongCollection collection = spy(new SongCollection(3)); // Capacity set to 3
+		doReturn(mockJson).when(collection).fetchSongJson();
+
+		// Add songs to reach the collection's capacity
+		collection.addSong(new Song("001", "Song 1", "Artist 1", 3.0));
+		collection.addSong(new Song("002", "Song 2", "Artist 2", 3.5));
+		collection.addSong(new Song("003", "Song 3", "Artist 3", 4.0));
+
+		// Attempt to add a 4th song, which should be prevented
+		Song result = collection.fetchSongOfTheDay();
+
+		// Assert the result and that no more songs were added
+		assertNotNull(result); // Ensure a song was created
+		assertEquals(3, collection.getSongs().size()); // Collection size should still be 3
+	}
+
+}
