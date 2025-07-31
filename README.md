@@ -14,6 +14,9 @@ This project now includes a Jenkins pipeline to automate the CI/CD process using
 **3. build:**  
 * Builds the project while skipping tests with: `mvn install -DskipTests`.
 
+**4. Scan**
+* Performs static code analysis with SonarQube using `mvn sonar:sonar`.
+
 ---
 
 ## Requirements
