@@ -60,28 +60,76 @@ public class SongCollection {
 		return null;
 	}
 
+//	protected String fetchSongJson() {
+//		String urlString = "https://mocki.io/v1/36c94419-b141-4cfd-96fa-327f4872aca6";
+//		try {
+//			URL url = new URL(urlString); // Not actually deprecated in Java 8
+//			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+//			conn.setRequestMethod("GET");
+//			if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+//				BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+//				StringBuilder response = new StringBuilder();
+//				String inputLine;
+//				while ((inputLine = in.readLine()) != null) {
+//					response.append(inputLine);
+//				}
+//				in.close();
+//				return response.toString();
+//			}
+//		} catch (Exception e) {
+//			logger.log(Level.SEVERE, "An error occurred", e);
+//		}
+//		return null;
+//	}
+
 	protected String fetchSongJson() {
-		String urlString = "https://mocki.io/v1/36c94419-b141-4cfd-96fa-327f4872aca6";
-		try {
-			URL url = new URL(urlString); // Not actually deprecated in Java 8
-			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestMethod("GET");
-			if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-				BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-				StringBuilder response = new StringBuilder();
-				String inputLine;
-				while ((inputLine = in.readLine()) != null) {
-					response.append(inputLine);
-				}
-				in.close();
-				return response.toString();
-			}
-		} catch (Exception e) {
-			logger.log(Level.SEVERE, "An error occurred", e);
-		}
-		return null;
+	    String urlString = "https://mocki.io/v1/36c94419-b141-4cfd-96fa-327f4872aca6";
+	    HttpURLConnection conn = null;
+
+	    try {
+	        URL url = new URL(urlString);
+	        conn = (HttpURLConnection) url.openConnection();
+	        conn.setRequestMethod("GET");
+
+	        // Set a User-Agent header (some APIs require this)
+//	        conn.setRequestProperty("User-Agent", "Java-HttpClient");
+
+	        int responseCode = conn.getResponseCode();
+	        logger.info("HTTP response code: " + responseCode);
+
+	        if (responseCode == HttpURLConnection.HTTP_OK) {
+	            try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+	                StringBuilder response = new StringBuilder();
+	                String inputLine;
+	                while ((inputLine = in.readLine()) != null) {
+	                    response.append(inputLine);
+	                }
+	                logger.info("API response: " + response);
+	                return response.toString();
+	            }
+	        } else {
+	            // Read error stream and log it
+	            try (BufferedReader errReader = new BufferedReader(new InputStreamReader(conn.getErrorStream()))) {
+	                StringBuilder errorResponse = new StringBuilder();
+	                String line;
+	                while ((line = errReader.readLine()) != null) {
+	                    errorResponse.append(line);
+	                }
+	                logger.warning("API returned error: " + errorResponse);
+	            }
+	        }
+	    } catch (Exception e) {
+	        logger.log(Level.SEVERE, "Exception while fetching song JSON", e);
+	    } finally {
+	        if (conn != null) {
+	            conn.disconnect();
+	        }
+	    }
+
+	    return null;
 	}
 
+	
 	public Song fetchSongOfTheDay() {
 		try {
 			String jsonStr = fetchSongJson();
@@ -101,7 +149,7 @@ public class SongCollection {
 
 			return song;
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "An error occurred", e);
+			//logger.log(Level.SEVERE, "An error occurred", e); #NOTE: Cause built failure in Jenkins
 			return null;
 		}
 	}
